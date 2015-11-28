@@ -470,7 +470,10 @@
 		</tab>
 	</tabset>
 	<div class="table-container">
-		<table st-table="rowCollection" class="table table-striped">
+		<table
+				st-table="rowCollection"
+				st-service="registerSmartTableService"
+				class="table table-striped">
 			<thead>
 			<tr>
 				<th st-sort="getters.firstName">first name</th>
@@ -490,6 +493,7 @@
 			</tr>
 			</tbody>
 		</table>
+		<button class="btn btn-default" ng-click="updateSort()">Sort By Reverse First Name</button>
 	</div>
 
 	<p class="bg-info padding text-justify">

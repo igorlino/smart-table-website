@@ -130,6 +130,12 @@ app.controller('formatCtrl', ['$scope', function (scope) {
     }
 }]);
 app.controller('sortCtrl', ['$scope', '$filter', function (scope, filter) {
+    scope.registerSmartTableService = function registerSmartTableService(stService) {
+        if (stService) {
+            scope.stService = stService;
+        }
+    };
+
     scope.rowCollection = [
         {firstName: 'Laurent', lastName: 'Renard', birthDate: new Date('1987-05-21'), balance: 102, email: 'whatever@gmail.com'},
         {firstName: 'Blandine', lastName: 'Faivre', birthDate: new Date('1987-04-25'), balance: -2323.22, email: 'oufblandou@gmail.com'},
@@ -142,6 +148,10 @@ app.controller('sortCtrl', ['$scope', '$filter', function (scope, filter) {
             return value.firstName.length;
         }
     }
+
+    scope.updateSort = function() {
+        scope.stService.sortBy(scope.getters.firstName, true);
+    };
 }]);
 
 app.controller('filterCtrl', ['$scope', '$filter', function (scope, filter) {
@@ -326,3 +336,58 @@ app.directive('csSelect', function () {
         }
     };
 });
+
+(function () {
+    'use strict';
+
+    angular
+        .module('app')
+        .directive('stService', stService);
+
+    /* @ngInject */
+    function stService($parse, $timeout) {
+        var directive = {
+            restrict: 'A',
+            require: '^stTable',
+            link: function (scope, element, attr, smartTableCtrl) {
+                var fn = $parse(attr['stService']);
+
+                var service = {
+                    selectPage: selectPage,
+
+                    getFilteredCollection: smartTableCtrl.getFilteredCollection,
+                    pipe: smartTableCtrl.pipe,
+                    preventPipeOnWatch: smartTableCtrl.preventPipeOnWatch,
+                    search: smartTableCtrl.search,//search(input, predicate)
+                    select: smartTableCtrl.select,//select(row, mode)
+                    setFilterFunction: smartTableCtrl.setFilterFunction,//setFilterFunction(filterName)
+                    setSortFunction: smartTableCtrl.setSortFunction,//setSortFunction(sortFunctionName)
+                    slice: smartTableCtrl.slice,//splice(start, number)
+                    sortBy: smartTableCtrl.sortBy,//sortBy(predicate, reverse)
+                    tableState: smartTableCtrl.tableState//
+                };
+
+                //register callback
+                $timeout(function () {
+                    var callBackFn = fn(scope);
+                    if (callBackFn) {
+                        callBackFn(service);
+                    }
+                }, 0);
+
+                function selectPage(page, itemsPerPage) {
+                    //var tableState = {
+                    //    "sort": {},
+                    //    "search": {"predicateObject": {}},
+                    //    "pagination": {"start": 20, "totalItemCount": 0, "number": 20, "numberOfPages": 37}
+                    //};
+                    var tableState = service.tableState();
+                    if (page > 0 && page <= tableState.pagination.numberOfPages) {
+                        service.slice((page - 1) * itemsPerPage, itemsPerPage);
+                    }
+                }
+            }
+        };
+        return directive;
+    }
+})();
